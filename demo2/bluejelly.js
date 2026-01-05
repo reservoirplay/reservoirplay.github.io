@@ -1,5 +1,3 @@
-MICROBIT_ID = "BBC micro:bit [pivaz]";
-
 /*
 ============================================================
 BlueJelly.js
@@ -69,8 +67,7 @@ BlueJelly.prototype.scan = function(uuid){
 BlueJelly.prototype.requestDevice = function(uuid) {
   console.log('Execute : requestDevice');
   return navigator.bluetooth.requestDevice({
-      //acceptAllDevices: true,
-      filters: [{name: MICROBIT_ID}],//★追加
+      acceptAllDevices: true,
       optionalServices: [this.hashUUID[uuid].serviceUUID]})
   .then(device => {
     this.bluetoothDevice = device;
