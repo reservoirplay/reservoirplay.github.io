@@ -1,0 +1,1 @@
+import{M as u,z as _,X as o,A as t,Y as g,Z as p,_ as i,G as l,F as d,O as m}from"./DovyKkLv.js";function E(n,r){let s=null,f=t;var a;if(t){s=m;for(var e=g(document.head);e!==null&&(e.nodeType!==p||e.data!==n);)e=i(e);if(e===null)l(!1);else{var y=i(e);e.remove(),d(y)}}t||(a=document.head.appendChild(u()));try{_(()=>r(a),o)}finally{f&&(l(!0),d(s))}}export{E as h};
