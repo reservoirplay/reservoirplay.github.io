@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>クリックでチーン</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --fg: #e5e7eb;
+      --accent: #38bdf8;
+    }
+    html, body {
+      height: 100%;
+      margin: 0;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans JP", sans-serif;
+    }
+    .wrap {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 24px;
+    }
+    /* 画面全体のリップル用レイヤ */
+    .ripple-layer {
+      position: fixed;
+      inset: 0;
+      pointer-events: none; /* クリックは素通り */
+      z-index: 10; /* ボタンより前面に */
+      overflow: hidden;
+    }
+    button#playBtn {
+      font-size: 48px;
+      padding: 24px 48px;
+      border-radius: 16px;
+      border: 2px solid var(--accent);
+      color: var(--bg);
+      background: var(--accent);
+      cursor: pointer;
+      box-shadow: 0 10px 25px rgba(56,189,248,0.3);
+      transition: transform .05s ease, box-shadow .2s ease, background .2s ease;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      position: relative;
+    }
+    button#playBtn:active {
+      transform: translateY(1px) scale(0.995);
+      box-shadow: 0 6px 18px rgba(56,189,248,0.22);
+    }
+    /* クリックのリップル（画面全体） */
+    .ripple {
+      position: absolute; /* .ripple-layer 内に配置 */
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      background: rgba(255,255,255,0.5);
+      animation: ripple 600ms ease-out forwards;
+      mix-blend-mode: screen;
+    }
+    @keyframes ripple {
+      from { opacity: 0.45; transform: translate(-50%, -50%) scale(0); }
+      to   { opacity: 0;    transform: translate(-50%, -50%) scale(1); }
+    }
+    /* 成功時の軽いフラッシュ */
+    .flash {
+      box-shadow: 0 0 0 0 rgba(255,255,255,0.0), 0 10px 25px rgba(56,189,248,0.3);
+      animation: flash 180ms ease-out;
+    }
+    @keyframes flash {
+      0% { box-shadow: 0 0 0 0 rgba(255,255,255,0.0), 0 10px 25px rgba(56,189,248,0.3); }
+      40% { box-shadow: 0 0 0 8px rgba(255,255,255,0.25), 0 10px 25px rgba(56,189,248,0.3); }
+      100% { box-shadow: 0 0 0 0 rgba(255,255,255,0.0), 0 10px 25px rgba(56,189,248,0.3); }
+    }
+    .hint {
+      opacity: 0.8;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <button id="playBtn" type="button">鳴らす 🔔</button>
+  </div>
+  <div class="ripple-layer" id="rippleLayer"></div>
+
+  <audio id="bell" src="チーン2.mp3" preload="auto"></audio>
+
+  <script>
+    (function () {
+      const btn = document.getElementById('playBtn');
+      const audio = document.getElementById('bell');
+      const layer = document.getElementById('rippleLayer');
+
+      // 連打時も先頭から鳴らせるように
+      async function playBell(ev) {
+        try {
+          audio.currentTime = 0;
+          await audio.play();
+          // 触覚フィードバック（対応端末）
+          if (navigator.vibrate) navigator.vibrate(10);
+          // 視覚フィードバック
+          flashAndRipple(ev);
+        } catch (err) {
+          // iOS 等でのオーディオロック対策: ユーザ操作時に再試行
+          console.warn('再生できませんでした。もう一度クリックしてください。', err);
+        }
+      }
+
+      // 初回タップで確実に鳴るように、オーディオの再生をトリガ
+      btn.addEventListener('click', playBell);
+
+      function flashAndRipple(ev) {
+        // ボタンに軽いフラッシュ
+        btn.classList.remove('flash');
+        // 再適用のためのリフロー
+        void btn.offsetWidth;
+        btn.classList.add('flash');
+
+        // 画面全体のリップル（クリック位置中心）
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+        const x = ev.clientX ?? (vw / 2);
+        const y = ev.clientY ?? (vh / 2);
+
+        // 端まで届く半径（最大の角までの距離）
+        const dx = Math.max(x, vw - x);
+        const dy = Math.max(y, vh - y);
+        const r = Math.ceil(Math.sqrt(dx*dx + dy*dy));
+
+        const ripple = document.createElement('span');
+        ripple.className = 'ripple';
+        ripple.style.left = x + 'px';
+        ripple.style.top  = y + 'px';
+        ripple.style.width  = (2*r) + 'px';
+        ripple.style.height = (2*r) + 'px';
+
+        layer.appendChild(ripple);
+        ripple.addEventListener('animationend', () => ripple.remove());
+      }
+    })();
+  </script>
+</body>
+</html>
